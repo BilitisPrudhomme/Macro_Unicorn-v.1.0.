@@ -1,0 +1,49 @@
+# Installer yfinance si ce n'est pas déjà fait
+!pip install yfinance --quiet --upgrade
+
+import yfinance as yf
+import pandas as pd
+import matplotlib.pyplot as plt
+
+# Télécharger les données du S&P 500 et de l'ETF UUP (proxy pour le Dollar Index)
+spx = yf.download("^GSPC", period="6mo", interval="1d")[["Close"]]
+uup = yf.download("UUP", period="6mo", interval="1d")[["Close"]]
+
+# Renommer les colonnes pour faciliter l'analyse
+spx.rename(columns={"Close": "SPX"}, inplace=True)
+uup.rename(columns={"Close": "DXY"}, inplace=True)
+
+# Fusionner les deux séries dans un même DataFrame
+data = pd.concat([spx, uup], axis=1).dropna()
+
+# Calcul des rendements à 3 mois (approximativement 63 jours de trading)
+data["SPX Returns"] = data["SPX"].pct_change(63) * 100
+data["DXY Returns"] = data["DXY"].pct_change(63) * 100
+data.dropna(inplace=True)
+
+# Tracer le graphique des quadrants
+plt.figure(figsize=(10, 7))
+plt.scatter(data["SPX Returns"], data["DXY Returns"], alpha=0.5, color="blue", label="Observations")
+
+# Tracer les axes (quadrants)
+plt.axhline(0, color='black', linestyle="--")
+plt.axvline(0, color='black', linestyle="--")
+
+# Zone "Macro Unicorn" (SPX < -10% et DXY < -5%)
+macro_unicorn = data[(data["SPX Returns"] < -10) & (data["DXY Returns"] < -5)]
+plt.scatter(macro_unicorn["SPX Returns"], macro_unicorn["DXY Returns"], color='red', label="Macro Unicorn", s=60)
+
+# Labels des cadrants
+plt.text(12, 5, "Dollar ↑ / SPX ↑", fontsize=12, color="green", ha="center")
+plt.text(-12, 5, "Dollar ↑ / SPX ↓", fontsize=12, color="orange", ha="center")
+plt.text(12, -5, "Dollar ↓ / SPX ↑", fontsize=12, color="orange", ha="center")
+plt.text(-12, -5, "Dollar ↓ / SPX ↓", fontsize=12, color="red", ha="center")
+
+# Mise en forme finale
+plt.xlabel("S&P 500 3-Month Returns (%)")
+plt.ylabel("Dollar Index (UUP) 3-Month Returns (%)")
+plt.title("S&P 500 vs Dollar Index - 3-Month Returns")
+plt.grid(True, linestyle="--", alpha=0.7)
+plt.legend()
+plt.tight_layout()
+plt.show()

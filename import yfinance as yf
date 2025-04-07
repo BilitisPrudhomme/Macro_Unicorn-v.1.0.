@@ -1,0 +1,14 @@
+import yfinance as yf
+
+# Télécharger les données du S&P 500
+spx = yf.download("^GSPC", period="6mo", interval="1d")[["Close"]]
+
+# Télécharger les données de l'ETF UUP
+uup = yf.download("UUP", period="6mo", interval="1d")[["Close"]]
+
+# Afficher les premières lignes des données téléchargées
+print("S&P 500 Data:")
+print(spx.head())
+
+print("\nUUP Data:")
+print(uup.head())
